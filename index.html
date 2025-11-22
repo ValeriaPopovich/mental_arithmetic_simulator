@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Устный счёт — тренажёр</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --pink: #ffb7d5;
+  --mint: #9ff5e4;
+  --orange: #ffd599;
+  --text: #92415a;
+  --bg: #fff3fb;
+  --error-bg: #ffd6d6;
+}
+
+/* GLOBAL */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Nunito", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* FLOATING BACKGROUND CIRCLES */
+.bg-circle {
+  position: fixed;
+  border-radius: 50%;
+  opacity: 0.85;
+  filter: blur(8px);
+  z-index: -1;
+  animation: float 14s infinite ease-in-out;
+}
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-40px); }
+  100%{ transform: translateY(0); }
+}
+.c1 { width:260px;height:260px;top:-60px;left:-40px;background:var(--mint); }
+.c2 { width:330px;height:330px;bottom:-90px;right:-80px;background:var(--pink);animation-delay:3s; }
+.c3 { width:200px;height:200px;top:45%;left:10%;background:var(--orange);animation-delay:6s; }
+.c4 { width:260px;height:260px;top:20%;right:-40px;background:var(--mint);animation-delay:1s; }
+.c5 { width:240px;height:240px;bottom:15%;left:-60px;background:var(--pink);animation-delay:5s; }
+.c6 { width:170px;height:170px;bottom:25%;right:20%;background:var(--orange);animation-delay:7s; }
+
+/* APP LAYOUT */
+#app { width: 100%; max-width: 520px; padding: 20px; }
+
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+  animation: fade .35s ease;
+}
+@keyframes fade { 
+  from{opacity:0;transform:translateY(10px);} 
+  to{opacity:1;transform:translateY(0);} 
+}
+.screen.active { display: flex; }
+
+/* START SCREEN */
+#startBtn {
+  background: var(--mint);
+  border-radius: 20px;
+  padding: 18px 28px;
+  font-size: 1.4rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,0,0,.15);
+  transition: .25s;
+}
+#startBtn:hover { transform: translateY(-3px); background: var(--pink); }
+
+/* GAME */
+#lives {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+/* PROGRESS DOTS */
+#progressRow {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: -5px;
+}
+
+.progress-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: background 0.3s, transform 0.3s;
+}
+
+.progress-dot.active {
+  background: var(--mint);
+  transform: scale(1.15);
+}
+
+.progress-dot.error {
+  background: #ff4a4a !important;
+  transform: scale(1.2);
+}
+
+/* TIMER */
+#timerCircle {
+  position: relative;
+  width: 90px;
+  height: 90px;
+}
+#timerCircle svg {
+  width:100%;height:100%;
+  transform: rotate(-90deg);
+}
+#timerCircle circle {
+  stroke: var(--mint);
+  stroke-width: 6;
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke .2s;
+}
+#timerInside {
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  font-size:1.3rem;
+}
+.pulse { animation: pulse 0.7s infinite; }
+@keyframes pulse {
+  0%{transform:scale(1);}
+  50%{transform:scale(1.15);}
+  100%{transform:scale(1);}
+}
+
+/* PROBLEM CARD */
+#problemCard {
+  background:white;
+  padding:30px;
+  border-radius:22px;
+  width:100%;
+  box-shadow:0 12px 30px rgba(0,0,0,.15);
+  transition: .3s;
+}
+#problemCard.error {
+  background: #ffe1e1 !important;
+  border: 4px solid #ff2b2b !important;
+  box-shadow: 0 0 26px rgba(255,0,0,0.6) !important;
+  animation: shake .45s;
+}
+@keyframes shake {
+  0%{transform:translateX(0);}
+  25%{transform:translateX(-7px);}
+  50%{transform:translateX(7px);}
+  75%{transform:translateX(-5px);}
+  100%{transform:translateX(0);}
+}
+
+/* TEXT */
+#problem {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+#answer {
+  width: 150px;
+  font-size: 2rem;
+  border: 3px solid var(--pink);
+  border-radius: 16px;
+  padding: 8px 10px;
+  text-align: center;
+  outline: none;
+}
+#answer:focus {
+  box-shadow: 0 0 0 3px rgba(255,183,213,0.6);
+}
+
+#checkBtn {
+  margin-top:10px;
+  padding:12px 24px;
+  background: var(--pink);
+  border:none;
+  border-radius:16px;
+  font-size:1.2rem;
+  cursor:pointer;
+  transition:.25s;
+}
+#checkBtn:hover { background:var(--mint); transform:translateY(-2px); }
+
+#message { height:28px; font-size:1.2rem; }
+#message.error { 
+  color:#ff0000 !important; 
+  font-weight:700;
+  text-shadow:0 0 6px rgba(255,0,0,0.4);
+}
+
+/* WIN / LOSE */
+.big-title {
+  font-size:2.4rem;
+  margin-top:40px;
+}
+
+#restartBtn, #restartBtn2 {
+  margin-top:10px;
+  padding:18px 26px;
+  background:var(--mint);
+  border:none;
+  font-size:1.3rem;
+  border-radius:20px;
+  cursor:pointer;
+  transition:.3s;
+}
+#restartBtn:hover, #restartBtn2:hover { 
+  background:var(--pink); 
+  transform:translateY(-3px); 
+}
+
+#footer {
+  margin-top:20px;
+  font-size:1rem;
+  opacity:.8;
+}
+
+/* SUBSCRIBE BUTTON */
+#subscribeBtn {
+  position: fixed;
+  right: 18px;
+  top: 18px;
+  background: var(--pink);
+  color: var(--text);
+  padding: 14px 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 1rem;
+  box-shadow:0 8px 20px rgba(0,0,0,.15);
+  transition:.25s;
+}
+#subscribeBtn:hover { transform:scale(1.05); }
+
+/* FIREWORKS */
+#fireworks {
+  position: fixed;
+  inset:0;
+  pointer-events:none;
+}
+@keyframes boom {
+  0%{opacity:1;transform:scale(0);}
+  80%{opacity:1;transform:scale(1);}
+  100%{opacity:0;transform:scale(1.3);}
+}
+</style>
+</head>
+
+<body>
+
+<!-- floating background -->
+<div class="bg-circle c1"></div>
+<div class="bg-circle c2"></div>
+<div class="bg-circle c3"></div>
+<div class="bg-circle c4"></div>
+<div class="bg-circle c5"></div>
+<div class="bg-circle c6"></div>
+
+<!-- subscribe -->
+<div id="subscribeBtn" onclick="window.open('https://t.me/lera_easy_math','_blank')">💖 Подписаться</div>
+
+<div id="app">
+
+  <!-- START -->
+  <div id="screenStart" class="screen active">
+    <h1>✨ Тренажёр устного счёта</h1>
+    <p>10 примеров: + − × ÷</p>
+    <p>1 минута на каждый</p>
+    <button id="startBtn">Начать</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="screenGame" class="screen">
+
+    <div id="lives">❤️❤️❤️</div>
+
+    <div id="progressRow"></div>
+
+    <div id="timerCircle">
+      <svg viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="38"></circle>
+      </svg>
+      <div id="timerInside">
+        ⏰<br><span id="timerText">60</span>
+      </div>
+    </div>
+
+    <div id="problemCard">
+      <div id="problem"></div>
+      <input id="answer" type="number" />
+      <button id="checkBtn">Проверить</button>
+      <div id="message"></div>
+    </div>
+  </div>
+
+  <!-- WIN -->
+  <div id="screenWin" class="screen">
+    <div class="big-title">🎉 Отлично!</div>
+    <p>Ты прошёл тренировку 💖</p>
+    <button id="restartBtn">Ещё раз</button>
+    <div id="footer">Сделано с любовью 💖 @lera_easy_math</div>
+  </div>
+
+  <!-- LOSE -->
+  <div id="screenLose" class="screen">
+    <div class="big-title">💛 Это опыт!</div>
+    <p>Попробуем ещё раз?</p>
+    <button id="restartBtn2">Начать заново</button>
+    <div id="footer">Сделано с любовью 💖 @lera_easy_math</div>
+  </div>
+
+</div>
+
+<div id="fireworks"></div>
+
+<!-- ====================== JS ====================== -->
+<script>
+/* BASE OF EXAMPLES */
+const addition = [
+  "398+27","249+51","199+38","450+39","579+21","680+119","899+46","350+75","999+28","740+260",
+  "188+27","487+76","730+295","639+148","280+195","458+271","560+399","248+352","699+301","425+575",
+  "387+613","540+360"
+];
+
+const subtraction = [
+  "502-198","620-57","304-99","701-299","980-47","1000-382","760-248","900-501","430-389","800-173",
+  "305-168","602-389","901-458","512-274","450-267","702-386","614-297","900-468","731-288","507-207",
+  "820-320","999-456","1200-789"
+];
+
+const multiply = [
+  "340*10","78*100","9.3*100","0.48*1000","0.07*100",
+  "48*25","32*125","19*12","35*11","27*15","41*9","18*14","61*8","24*16","75*13",
+  "203*4","640*25","1250*8","299*3","360*14","49*18","101*12","198*5","302*9","501*7",
+  "203*19","89*11","52*29","98*15","270*37","84*26","1440*18"
+];
+
+const divide = [
+  "5600/100","720/10","81/1000","508/4","1203/3","804/6","450/25","1506/6","2500/125",
+  "3200/16","2100/70","360/24","1800/45","96/35","4500/75"
+];
+
+const complex = [
+  "149*85-149*75","82*41-82*39","560*13-560*3","27*102-27*2","99*55-99*45",
+  "48*18-48*8","325*61-325*60","73*29-73*19","144*51-144*1","250*44-250*40"
+];
+
+function calc(expr) {
+  return Function("return " + expr)();
+}
+
+/* GENERATE SET (variant C) */
+function generateSet() {
+  const pick = (arr, n) => {
+    const copy = [...arr];
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      let idx = Math.floor(Math.random() * copy.length);
+      out.push(copy[idx]);
+      copy.splice(idx, 1);
+    }
+    return out;
+  };
+
+  let result = [];
+  result.push(...pick(addition, 3));
+  result.push(...pick(subtraction, 3));
+  result.push(...pick(multiply.concat(complex), 2));
+  result.push(...pick(divide, 2));
+
+  return result.sort(() => Math.random() - 0.5);
+}
+
+const screens = {
+  start: document.getElementById("screenStart"),
+  game: document.getElementById("screenGame"),
+  win: document.getElementById("screenWin"),
+  lose: document.getElementById("screenLose"),
+};
+
+function show(screen) {
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  screen.classList.add("active");
+}
+
+let tasks = [];
+let index = 0;
+let lives = 3;
+let timer = 60;
+let interval = null;
+
+const livesEl = document.getElementById("lives");
+const progressRow = document.getElementById("progressRow");
+const timerText = document.getElementById("timerText");
+const timerCircleEl = document.querySelector("#timerCircle circle");
+const problemEl = document.getElementById("problem");
+const answerEl = document.getElementById("answer");
+const messageEl = document.getElementById("message");
+const card = document.getElementById("problemCard");
+const fireworksEl = document.getElementById("fireworks");
+
+/* TIMER */
+function updateTimer() {
+  const r = 38;
+  const c = 2 * Math.PI * r;
+  timerText.textContent = timer;
+
+  timerCircleEl.style.strokeDasharray = c;
+  timerCircleEl.style.strokeDashoffset = c * (1 - timer / 60);
+
+  if (timer <= 10) {
+    timerCircleEl.style.stroke = "#ff4a4a";
+    timerCircle.classList.add("pulse");
+  } else {
+    timerCircleEl.style.stroke = "var(--mint)";
+    timerCircle.classList.remove("pulse");
+  }
+}
+
+/* PROGRESS DOTS */
+function renderProgress() {
+  progressRow.innerHTML = "";
+  for (let i = 0; i < tasks.length; i++) {
+    const dot = document.createElement("div");
+    dot.classList.add("progress-dot");
+    if (i < index) dot.classList.add("active");
+    progressRow.appendChild(dot);
+  }
+}
+
+/* START */
+document.getElementById("startBtn").onclick = () => {
+  tasks = generateSet();
+  index = 0;
+  lives = 3;
+  livesEl.textContent = "❤️❤️❤️";
+  show(screens.game);
+  startTask();
+};
+
+/* NEW TASK */
+function startTask() {
+  if (index >= tasks.length) return win();
+
+  renderProgress();
+
+  messageEl.textContent = "";
+  messageEl.classList.remove("error");
+  card.classList.remove("error");
+
+  const task = tasks[index];
+  problemEl.textContent = task.replace(/\*/g, " × ").replace(/\//g, " ÷ ");
+
+  answerEl.value = "";
+  answerEl.focus();
+
+  clearInterval(interval);
+  timer = 60;
+  updateTimer();
+  interval = setInterval(() => {
+    timer--;
+    updateTimer();
+    if (timer <= 0) {
+      clearInterval(interval);
+      showError("Время вышло!");
+      setTimeout(() => loseLife(), 700);
+    }
+  }, 1000);
+}
+
+/* CHECK */
+document.getElementById("checkBtn").onclick = check;
+answerEl.addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+
+function check() {
+  if (answerEl.value.trim() === "") return;
+
+  const correct = calc(tasks[index]);
+
+  if (Number(answerEl.value) === correct) {
+    index++;
+    setTimeout(startTask, 300);
+  } else {
+    showError("Неверно! Правильно: " + correct);
+    setTimeout(() => loseLife(), 700);
+  }
+}
+
+/* ERROR EFFECT */
+function showError(msg) {
+  messageEl.textContent = msg;
+  messageEl.classList.add("error");
+  card.classList.add("error");
+
+  const dots = document.querySelectorAll(".progress-dot");
+  if (dots[index]) dots[index].classList.add("error");
+
+  setTimeout(() => {
+    card.classList.remove("error");
+    messageEl.classList.remove("error");
+  }, 700);
+}
+
+/* LOSE LIFE */
+function loseLife() {
+  lives--;
+  livesEl.textContent = "❤️".repeat(lives);
+
+  if (lives <= 0) {
+    clearInterval(interval);
+    lose();
+    return;
+  }
+
+  index++;
+  startTask();
+}
+
+/* WIN */
+function win() {
+  clearInterval(interval);
+  launchFireworks();
+  show(screens.win);
+}
+
+/* LOSE */
+function lose() {
+  clearInterval(interval);
+  show(screens.lose);
+}
+
+/* FIREWORKS */
+function launchFireworks() {
+  fireworksEl.innerHTML = "";
+  const colors = ["var(--pink)", "var(--mint)", "var(--orange)"];
+
+  for (let i = 0; i < 45; i++) {
+    const p = document.createElement("div");
+    const size = Math.random() * 12 + 6;
+
+    p.style.position = "absolute";
+    p.style.width = size + "px";
+    p.style.height = size + "px";
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.borderRadius = "50%";
+    p.style.left = Math.random() * 100 + "%";
+    p.style.top = (Math.random() * 40 + 30) + "%";
+    p.style.animation = "boom 1s ease-out forwards";
+
+    fireworksEl.appendChild(p);
+  }
+}
+
+/* RESTART */
+document.getElementById("restartBtn").onclick =
+document.getElementById("restartBtn2").onclick = () => location.reload();
+</script>
+
+</body>
+</html>
